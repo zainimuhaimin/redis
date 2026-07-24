@@ -1,9 +1,9 @@
 # =============================================================================
 # DEV override
 # - Port di-expose ke semua interface biar gampang diakses dari host / app lokal
-# - Tanpa password (buat kemudahan; jangan dipakai di server publik)
+# - Password AKTIF (REDIS_PASSWORD dari .env) biar perilaku mirip prod
 # - Logging debug + AOF nyala biar mirip prod tapi ringan
-# - Redis Commander (GUI) ikut nyala buat inspect data
+# - Redis Commander (GUI) ikut nyala buat inspect data, sudah pakai password
 # =============================================================================
 
 services:
@@ -11,23 +11,25 @@ services:
     ports:
       - "6379:6379"
     command: >
-      redis-server /usr/local/etc/redis/redis.conf
-      --requirepass ${REDIS_PASSWORD_DEV:?REDIS_PASSWORD wajib diisi di .env}
-      --maxmemory ${REDIS_MAXMEMORY:-512mb}
+      redis-server
       --appendonly yes
       --loglevel debug
+      --requirepass ${REDIS_PASSWORD_DEV:?REDIS_PASSWORD_DEV wajib diisi di .env, isi bebas untuk dev}
     environment:
-      # dipakai cuma buat healthcheck di bawah, bukan sumber password redis
       - REDIS_PASSWORD=${REDIS_PASSWORD_DEV}
-    volumes:
-      - ./config/redis.prod.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD_DEV\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: ${REDIS_CONTAINER_NAME:-redis}-commander
     restart: unless-stopped
     environment:
-      - REDIS_HOSTS=local:redis:6379
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
     ports:
       - "${REDIS_COMMANDER_PORT:-8081}:8081"
     networks:

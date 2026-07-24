@@ -37,21 +37,22 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ## Beda dev vs prod
 
-| Aspek        | Dev                          | Prod                                   |
-|--------------|------------------------------|----------------------------------------|
-| Password     | Tidak ada                    | Wajib (`REDIS_PASSWORD` dari `.env`)   |
-| Port         | `6379` (semua interface)     | `127.0.0.1:6379` (localhost saja)      |
-| Config       | Flag command sederhana       | `config/redis.prod.conf`               |
-| Logging      | `debug`                      | `notice` + rotasi (10m × 3)            |
-| Resource     | Tanpa limit                  | Limit memory + reservation             |
-| GUI          | Redis Commander (`:8081`)    | Tidak ada                              |
+| Aspek        | Dev                                | Prod                                   |
+|--------------|-------------------------------------|-----------------------------------------|
+| Password     | Wajib (`REDIS_PASSWORD_DEV`, boleh simpel) | Wajib (`REDIS_PASSWORD`, harus kuat) |
+| Port         | `6379` (semua interface)           | `127.0.0.1:6379` (localhost saja)      |
+| Config       | Flag command sederhana             | `config/redis.prod.conf`               |
+| Logging      | `debug`                            | `notice` + rotasi (10m × 3)            |
+| Resource     | Tanpa limit                        | Limit memory + reservation             |
+| GUI          | Redis Commander (`:8081`), pakai password | Tidak ada                        |
 
 ## Kenapa desainnya begini
 
 - **Password & memory lewat env**, bukan ditulis di file config, jadi rahasia
   nggak ikut ter-commit. Command-line arg meng-override `redis.conf`.
-- **`REDIS_PASSWORD:?...`** bikin `make prod` gagal cepat kalau password belum
-  diisi — mencegah prod jalan tanpa auth.
+- **`REDIS_PASSWORD/REDIS_PASSWORD_DEV:?...`** dipakai di dev maupun prod — bikin `make dev`/`make prod`
+  gagal cepat kalau password belum diisi, bukannya diam-diam jalan tanpa auth.
+  Di dev boleh diisi password simpel, di prod harus yang kuat.
 - **Port prod bind ke `127.0.0.1`**. Kalau app kamu juga container, hapus blok
   `ports` di `docker-compose.prod.yml` dan akses Redis via hostname `redis`
   lewat network `redis-net`.
