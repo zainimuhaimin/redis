@@ -32,7 +32,7 @@ ps:
 
 ## cli: masuk redis-cli (dev, pakai password dari .env)
 cli:
-	$(COMPOSE_DEV) exec redis sh -c 'redis-cli -a "$$REDIS_PASSWORD_DEV"'
+	$(COMPOSE_DEV) exec redis sh -c 'redis-cli -a "$$REDIS_PASSWORD"'
 
 ## cli-prod: masuk redis-cli (prod, pakai password dari .env)
 cli-prod:

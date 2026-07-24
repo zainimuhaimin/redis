@@ -1,7 +1,7 @@
 # =============================================================================
 # DEV override
 # - Port di-expose ke semua interface biar gampang diakses dari host / app lokal
-# - Password AKTIF (REDIS_PASSWORD dari .env) biar perilaku mirip prod
+# - Password AKTIF (REDIS_PASSWORD_DEV dari .env) biar perilaku mirip prod
 # - Logging debug + AOF nyala biar mirip prod tapi ringan
 # - Redis Commander (GUI) ikut nyala buat inspect data, sudah pakai password
 # =============================================================================
@@ -18,7 +18,7 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD_DEV}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD_DEV\" ping | grep -q PONG"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -29,7 +29,7 @@ services:
     container_name: ${REDIS_CONTAINER_NAME:-redis}-commander
     restart: unless-stopped
     environment:
-      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD_DEV}
     ports:
       - "${REDIS_COMMANDER_PORT:-8081}:8081"
     networks:
