@@ -16,6 +16,29 @@ services:
       --maxmemory ${REDIS_MAXMEMORY:-512mb}
       --appendonly yes
       --loglevel debug
+    environment:
+      # dipakai cuma buat healthcheck di bawah, bukan sumber password redis
+      - REDIS_PASSWORD_DEV=${REDIS_PASSWORD}
+    volumes:
+      - ./config/redis.prod.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          # kasih headroom ~25% di atas maxmemory redis buat overhead
+          memory: 768M
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis-commander:
     image: rediscommander/redis-commander:latest
