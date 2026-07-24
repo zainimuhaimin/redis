@@ -1,0 +1,30 @@
+# =============================================================================
+# DEV override
+# - Port di-expose ke semua interface biar gampang diakses dari host / app lokal
+# - Tanpa password (buat kemudahan; jangan dipakai di server publik)
+# - Logging debug + AOF nyala biar mirip prod tapi ringan
+# - Redis Commander (GUI) ikut nyala buat inspect data
+# =============================================================================
+
+services:
+  redis:
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --loglevel debug
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ${REDIS_CONTAINER_NAME:-redis}-commander
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    networks:
+      - redis-net
+    depends_on:
+      redis:
+        condition: service_healthy

@@ -1,0 +1,41 @@
+# =============================================================================
+# PROD override
+# - Wajib password (REDIS_PASSWORD, di-inject dari env, TIDAK di-commit)
+# - Tuning statis lewat config/redis.prod.conf
+# - Port cuma bind ke localhost (127.0.0.1) -> aman dari akses luar.
+#   Kalau app-nya container lain, cukup lewat network `redis-net`, hapus ports.
+# - Resource limit + log rotation biar nggak makan disk/RAM tak terkendali
+# =============================================================================
+
+services:
+  redis:
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD wajib diisi di .env}
+      --maxmemory ${REDIS_MAXMEMORY:-512mb}
+      --maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+    environment:
+      # dipakai cuma buat healthcheck di bawah, bukan sumber password redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - ./config/redis.prod.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          # kasih headroom ~25% di atas maxmemory redis buat overhead
+          memory: 768M
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
